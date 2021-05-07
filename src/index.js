@@ -1,6 +1,6 @@
 import css from './index.css';
 
-export default class AnyButton {
+export default class Button {
 
     /**
      *
@@ -18,41 +18,24 @@ export default class AnyButton {
     }
 
     /**
-     *
-     * @returns {{text: string, link: string}}
-     */
-    get data() {
-        return this._data;
-    }
-
-    /**
-     *
-     * @param data
-     */
-    set data(data) {
-        this._data = Object.assign({}, {
-            link: this.api.sanitizer.clean(data.link || "", AnyButton.sanitize),
-            text: this.api.sanitizer.clean(data.text || "", AnyButton.sanitize)
-        });
-    }
-
-    /**
      * @param savedData
      * @returns {boolean}
      */
     validate(savedData) {
-        if (this._data.link === "" || this._data.text === "") {
+        if (this.data.link === "" || this.data.text === "") {
             return false;
         }
         return true;
     }
+
     /**
      *
      * @param block
      * @returns {{caption: string, text: string, alignment: string}}
      */
     save(block) {
-        return this._data;
+        console.log(this.data);
+        return this.data;
     }
 
     /**
@@ -70,57 +53,55 @@ export default class AnyButton {
      * @param data
      * @param config
      * @param api
-     * @param readOnly
      */
-    constructor({ data, config, api, readOnly }) {
+    constructor({ data, config, api }) {
+        this.data = data;
         this.api = api;
         this.nodes = {
             wrapper: null,
             container: null,
             inputHolder: null,
             toggleHolder: null,
-            anyButtonHolder: null,
+            ButtonHolder: null,
             textInput: null,
             linkInput: null,
             registButton: null,
-            anyButton: null,
+            Button: null,
         }
         //css overwrite
         const _CSS = {
             baseClass: this.api.styles.block,
             hide: "hide",
             btn: "btn",
-            container: "anyButtonContainer",
-            input: "anyButtonContainer__input",
+            container: "ButtonContainer",
+            input: "ButtonContainer__input",
 
-            inputHolder: "anyButtonContainer__inputHolder",
-            inputText: "anyButtonContainer__input--text",
-            inputLink: "anyButtonContainer__input--link",
-            registButton: "anyButtonContainer__registerButton",
-            anyButtonHolder: "anyButtonContainer__anyButtonHolder",
-            btnColor: "btn--default",
+            inputHolder: "ButtonContainer__inputHolder",
+            inputText: "ButtonContainer__input--text",
+            inputLink: "ButtonContainer__input--link",
+            registButton: "ButtonContainer__registerButton",
+            ButtonHolder: "ButtonContainer__ButtonHolder",
+            btnColor: "btn-primary",
             toggleSwitch: "toggle-switch",
             toggleInput: "toggle-input",
             toggleLabel: "toggle-label",
         }
-
-        this.CSS = Object.assign(_CSS, config.css)
-        this.data = data;
+        this.CSS = Object.assign(_CSS, config.css);
     }
 
     render() {
         this.nodes.wrapper = this.make('div', this.CSS.baseClass);
         this.nodes.container = this.make('div', this.CSS.container); //twitter-embed-tool
 
+        this.nodes.ButtonHolder = this.makeButtonHolder();
         this.nodes.inputHolder = this.makeInputHolder();
-        this.nodes.anyButtonHolder = this.makeAnyButtonHolder();
 
         this.nodes.container.appendChild(this.nodes.inputHolder);
-        this.nodes.container.appendChild(this.nodes.anyButtonHolder);
+        this.nodes.container.appendChild(this.nodes.ButtonHolder);
 
-        if (this._data.link !== "") {
-            this.nodes.textInput.textContent = this._data.text;
-            this.nodes.linkInput.textContent = this._data.link;
+        if (this.data.link != null) {
+            this.nodes.textInput.value = this.data.text;
+            this.nodes.linkInput.value = this.data.link;
             this.refreshButton()
         }
         this.nodes.wrapper.appendChild(this.nodes.container);
@@ -129,44 +110,47 @@ export default class AnyButton {
 
     makeInputHolder() {
         const inputHolder = this.make('div', [this.CSS.inputHolder]);
-        this.nodes.textInput = this.make('div', [this.api.styles.input, this.CSS.input, this.CSS.inputText], {
+        this.nodes.textInput = this.make('input', [this.api.styles.input, this.CSS.input, this.CSS.inputText], {
             contentEditable: !this.readOnly,
         });
         this.nodes.textInput.dataset.placeholder = this.api.i18n.t('Button Text');
 
-        this.nodes.linkInput = this.make('div', [this.api.styles.input, this.CSS.input, this.CSS.inputLink], {
+        this.nodes.linkInput = this.make('input', [this.api.styles.input, this.CSS.input, this.CSS.inputLink], {
             contentEditable: !this.readOnly,
         })
         this.nodes.linkInput.dataset.placeholder = this.api.i18n.t('Link Url');
 
-        this.nodes.textInput.addEventListener('change', this.refreshButton());
-        this.nodes.linkInput.addEventListener('change', this.refreshButton());
+        
+        this.nodes.registButton = this.make('div',[this.api.styles.button, this.CSS.registButton]);
+        this.nodes.registButton.textContent = this.api.i18n.t('Set');
+        this.nodes.registButton.addEventListener('click', (event) => {
+            this.refreshButton();
+        });
 
         inputHolder.appendChild(this.nodes.textInput);
         inputHolder.appendChild(this.nodes.linkInput);
-
+        inputHolder.appendChild(this.nodes.registButton);
         return inputHolder;
     }
 
-    makeAnyButtonHolder() {
-        const anyButtonHolder = this.make('div', [this.CSS.show, this.CSS.anyButtonHolder]);
-        this.nodes.anyButton = this.make('a', [this.CSS.btn, this.CSS.btnColor], {
+    makeButtonHolder() {
+        const ButtonHolder = this.make('div', [this.CSS.show, this.CSS.ButtonHolder]);
+        this.nodes.Button = this.make('a', [this.CSS.btn, this.CSS.btnColor, 'NotLoad'], {
             target: '_blank',
             rel: 'nofollow noindex noreferrer',
-            class: 'NotLoad',
         });
-        this.nodes.anyButton.textContent = this.api.i18n.t("Default Button");
-        anyButtonHolder.appendChild(this.nodes.anyButton);
-        return anyButtonHolder;
+        this.nodes.Button.textContent = this.api.i18n.t("Default Button");
+        ButtonHolder.appendChild(this.nodes.Button);
+        return ButtonHolder;
     }
 
     refreshButton() {
         this.data = {
-            "link": this.nodes.linkInput.textContent,
-            "text": this.nodes.textInput.textContent
+            "link": this.nodes.linkInput.value,
+            "text": this.nodes.textInput.value
         }
-        this.nodes.anyButton.textContent = this._data.text;
-        this.nodes.anyButton.setAttribute("href", this._data.link);
+        this.nodes.Button.textContent = this.data.text;
+        this.nodes.Button.setAttribute("href", this.data.link);
     }
 
     /**
